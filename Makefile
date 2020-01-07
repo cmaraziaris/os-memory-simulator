@@ -1,7 +1,7 @@
 PROGRAM = mem_sim
 
 CC = gcc
-CFLAGS = -Wall -Wextra -I. 
+CFLAGS = -Wall -I. 
 
 OBJS = simulator.o memory.o page_repl.o
 
