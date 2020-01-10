@@ -1,14 +1,14 @@
 /* page_repl.c */
 
 #include <stdbool.h>  // bool
+#include <stddef.h>   // NULL
 #include <stdint.h>   // size_t, int8_t
-#include <stdlib.h>   // NULL
 #include <time.h>     // struct timespec
 
 #include "memory.h"
 #include "page_repl.h"
 
-
+#if 0
 /* Remove a page from the IPT, write in HD if necessary.  */
 static void   rm_page(struct memory *mem, struct mem_entry *entry);
 
@@ -17,23 +17,25 @@ static size_t find_wset(struct memory *mem, int8_t pid);
 
 /* Get the index of the oldest page in the WS.  */
 static size_t find_oldest(struct memory *mem, struct mem_entry *entry, size_t ws_pos);
-
+#endif
 
 /* ========================================================================= */
-/* Return the index of the oldest entry in the IPT */
+/* Return the index of the oldest entry in the main memory */
 size_t lru(struct memory *mem)
 {
+  struct main_memory *mm = mem->mmem;
+
   size_t pos = 0;
 
   struct timespec min_t;
-  min_t.tv_sec  = mem->ipt[0].latency.tv_sec;
-  min_t.tv_nsec = mem->ipt[0].latency.tv_nsec;
+  min_t.tv_sec  = mm->entries[0].latency.tv_sec;
+  min_t.tv_nsec = mm->entries[0].latency.tv_nsec;
 
   /* Compare every entry's timestamps */
-  for (size_t i = 1; i < mem->ipt_size; ++i)
+  for (size_t i = 1; i < mm->mm_size; ++i)
   {
-    time_t sec  = mem->ipt[i].latency.tv_sec;
-    long   nsec = mem->ipt[i].latency.tv_nsec;
+    time_t sec  = mm->entries[i].latency.tv_sec;
+    long   nsec = mm->entries[i].latency.tv_nsec;
 
     if (sec < min_t.tv_sec || (sec == min_t.tv_sec && nsec < min_t.tv_nsec))
     {
@@ -43,9 +45,10 @@ size_t lru(struct memory *mem)
       pos = i;
     }
   }
+
   return pos;
 }
-
+#if 0
 /* ========================================================================= */
 
 /* Update the working set of a specifid PID,    *
@@ -150,3 +153,4 @@ static size_t find_oldest(struct memory *mem, struct mem_entry *entry, size_t ws
   return pos;
 }
 /* ========================================================================= */
+#endif

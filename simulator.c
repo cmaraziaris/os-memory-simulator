@@ -22,7 +22,7 @@ enum error_t
 /* ========================================================================== */
 
 /* Opens a file and performs error handling. */
-static FILE *file_open(char *path, char *mode);
+static FILE *file_open(char *path);
 
 /* Closes a file and perfrorms error handling. */
 static void  file_close(FILE *f);
@@ -77,13 +77,13 @@ int main(int argc, char const *argv[])
   if (page_repl == WS && ws_wind == 0) error_handle(WS_NO_WINDOW_S);
 
   /* Specify PIDs we're using */
-  int8_t pids[NUM_OF_PROCESSES] = { 0, 1 };    /* 2 processes */
+  uint8_t pids[NUM_OF_PROCESSES] = { 0, 1 };    /* 2 processes */
 
   /* Initialize memory segment */
   struct memory *my_mem = mem_init(frames, page_repl, pids, ws_wind);
 
-  FILE *tr1 = file_open(PATH1, "r");
-  FILE *tr2 = file_open(PATH2, "r");
+  FILE *tr1 = file_open(PATH1);
+  FILE *tr2 = file_open(PATH2);
 
   size_t refs_rd = 0; /* References read */
   bool end = 0;       /* EOF Check */
@@ -170,9 +170,9 @@ static int read_ref(FILE *file, uint32_t *paddr, char *pmode)
 
 /* Opens a file and performs error handling. *
  * Return a pointer to the file.             */
-static FILE *file_open(char *path, char *mode)
+static FILE *file_open(char *path)
 {
-  FILE *f = fopen(path, mode);
+  FILE *f = fopen(path, "r");
   if (f == NULL)
   {
     perror("fopen");

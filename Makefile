@@ -1,9 +1,9 @@
 PROGRAM = mem_sim
 
 CC = gcc
-CFLAGS = -Wall -I. 
+CFLAGS = -Wall -Wextra -I. 
 
-OBJS = simulator.o memory.o page_repl.o
+OBJS = simulator.o memory.o page_repl.o queue.o
 
 $(PROGRAM): clean $(OBJS)
 	$(CC) $(OBJS) -o $(PROGRAM)
