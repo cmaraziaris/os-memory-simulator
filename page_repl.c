@@ -81,8 +81,7 @@ static void ws_make_set(struct queue *set, struct queue **history, uint8_t pid)
 size_t working_set(struct memory *mem, uint8_t pid)
 {
   struct virtual_memory *vm = mem->vmem;
-  struct main_memory    *mm = mem->mmem;
-
+  
   vm->ws->set = queue_initialize();
 
   ws_make_set(vm->ws->set, vm->ws->history, pid);

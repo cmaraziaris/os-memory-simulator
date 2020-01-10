@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -6,6 +7,7 @@
 struct queue *queue_initialize(void)
 {
   struct queue *q = malloc(sizeof(struct queue)); //?
+  assert(q);
   q->size = 0;
   q->front = q->tail = NULL;
   return q;
@@ -38,6 +40,8 @@ queue_item_t queue_remove_first(struct queue *q)
 void queue_insert_last(struct queue *q, queue_item_t value)
 {
   struct queue_node *new_node = malloc(sizeof(struct queue_node));
+  assert(new_node);
+
   ++q->size;
   new_node->data = value;
   new_node->next = NULL;
@@ -54,6 +58,8 @@ void queue_insert_last(struct queue *q, queue_item_t value)
 void queue_sorted_insert(struct queue *q, queue_item_t value) // TODO: add compare
 {
   struct queue_node *new_node = malloc(sizeof(struct queue_node));
+  assert(new_node);
+
   ++q->size;
   new_node->data = value;
   new_node->next = NULL;
