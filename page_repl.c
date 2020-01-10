@@ -125,32 +125,4 @@ static size_t find_wset(struct memory *mem, int8_t pid)
 }
 
 /* ========================================================================= */
-
-/* Return the index of the oldest page in the WS.       *
- * Return ((size_t)-1) if 0 or 1 page exist in the WS.  */
-static size_t find_oldest(struct memory *mem, struct mem_entry *entry, size_t ws_pos)
-{
-  size_t pos = -1;
-  struct timespec t_min = entry->latency;
-  
-  /* Compare every WS entry's timestamps */
-  for (size_t i = 0; i < mem->ws[ws_pos].window_s; ++i)
-  {
-    struct mem_entry *rec = mem->ws[ws_pos].pages[i];
-
-    if (rec == NULL) continue;  /* If the slot in empty */
-
-    time_t sec  = rec->latency.tv_sec;
-    long   nsec = rec->latency.tv_nsec;
-
-    if (sec < t_min.tv_sec || (sec == t_min.tv_sec && nsec < t_min.tv_nsec))
-    {
-      pos = i;
-      t_min = rec->latency;
-    }
-  }
-
-  return pos;
-}
-/* ========================================================================= */
 #endif
