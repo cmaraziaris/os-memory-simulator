@@ -15,9 +15,21 @@
 #define FAILED     0
 #define SUCCESSFUL 1
 
-/* Initializes a memory entry with given values */
-static void set_new_entry(struct memory *mem, size_t index, uint32_t page, uint8_t pid, char mode, struct timespec t, uint16_t ofs);
 
+static int  ipt_search(struct memory *, uint32_t page, uint8_t pid, char mode, struct timespec t, uint16_t ofs);
+static int  ipt_fit   (struct memory *, uint32_t page, uint8_t pid, char mode, struct timespec t, uint16_t ofs);
+static void ipt_replace_page(struct memory *, uint32_t page, uint8_t pid, char mode, struct timespec t, uint16_t ofs);
+static void set_new_entry   (struct memory *, size_t index, uint32_t page, uint8_t pid, char mode, struct timespec t, uint16_t ofs);
+/* ========================================================================== */
+
+/* Initializes a memory entry with given values */
+static void set_new_entry(struct memory *mem, size_t index, uint32_t page, uint8_t pid, char mode, struct timespec t, uint16_t ofs)
+{
+  mem->vmem->ipt[index] = (struct vmem_entry) { .set = 1, .addr = page, .pid = pid };
+
+  mem->mmem->entries[index] = (struct mmem_entry) { .set = 1, .offset = ofs, .latency = t };
+  mem->mmem->entries[index].modified = (mode == 'W' ? 1 : 0);
+}
 /* ========================================================================== */
 
 static int ipt_search(struct memory *mem, uint32_t page, uint8_t pid, char mode, struct timespec t, uint16_t ofs)
@@ -121,16 +133,7 @@ void mem_retrieve(struct memory *mem, uint32_t addr, char mode, uint8_t pid)
 
   ipt_replace_page(mem, page, pid, mode, t, offset);   /* If IPT is full, perform a page replacement algorithm */
 }
-/* ========================================================================== */
 
-/* Initializes a virtual memory entry */
-static void set_new_entry(struct memory *mem, size_t index, uint32_t page, uint8_t pid, char mode, struct timespec t, uint16_t ofs)
-{
-  mem->vmem->ipt[index] = (struct vmem_entry) { .set = 1, .addr = page, .pid = pid };
-
-  mem->mmem->entries[index] = (struct mmem_entry) { .set = 1, .offset = ofs, .latency = t };
-  mem->mmem->entries[index].modified = (mode == 'W' ? 1 : 0);
-}
 
 /* ========================================================================== */
 
@@ -166,8 +169,8 @@ struct memory *mem_init(size_t frames, enum pg_rep_alg alg, uint8_t *pids, size_
 
   if (alg == WS) /* Working Set algorithm */
   {
-    vm->ws = malloc(sizeof(struct working_set_manager));  /* Create the Working Set Manager */
-    assert(vm->ws != NULL);
+    vm->ws = malloc(sizeof(struct working_set_comp));  /* Create the Working Set components */
+    assert(vm->ws);
 
     vm->ws->window_s = ws_wnd_s;
 
@@ -196,10 +199,9 @@ void mem_stats(struct memory *mem)
 /* Deallocate space used from the memory segment */
 void mem_clean(struct memory *mem)
 {
-  /* Deallocate virtual memory */
   struct virtual_memory *vm = mem->vmem;
 
-  if (vm->pg_repl == WS) /* Deallocate Working Set components */
+  if (vm->pg_repl == WS)  /* Deallocate Working Set components */
   {
     for (int i = 0; i < NUM_OF_PROCESSES; ++i)
       queue_destroy(vm->ws->history[i]);
@@ -207,13 +209,12 @@ void mem_clean(struct memory *mem)
     free(vm->ws);
   }
 
-  free(vm->ipt);   /* Deallocate the vmemory segment */
+  free(vm->ipt);   /* Deallocate the virtual memory segment */
   free(vm);
 
-  /* Deallocate main memory */
   struct main_memory *mm = mem->mmem;
 
-  free(mm->entries);
+  free(mm->entries);    /* Deallocate main memory segment */
   free(mm);
 
   free(mem);

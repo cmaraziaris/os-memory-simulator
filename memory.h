@@ -13,7 +13,7 @@ enum pg_rep_alg { LRU, WS }; /* Page replacement algorithm */
 
 struct vmem_entry;
 struct virtual_memory;
-struct working_set_manager;
+struct working_set_comp;
 struct mmem_entry;
 struct main_memory;
 struct memory;
@@ -60,10 +60,10 @@ struct virtual_memory     /* Virtual memory segment */
 
   enum pg_rep_alg pg_repl;  /* Page Replacement Algorithm */
 
-  struct working_set_manager *ws;   /* Array of Working Sets - WS algorithm only */
+  struct working_set_comp *ws;   /* Array of Working Sets - WS algorithm only */
 };
 
-struct working_set_manager
+struct working_set_comp
 {
 //  uint8_t pid;         /* WS for process pid */
 
