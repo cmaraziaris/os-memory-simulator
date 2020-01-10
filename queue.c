@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "queue_types.h"
+#include "queue.h"
 
 struct queue *queue_initialize(void)
 {

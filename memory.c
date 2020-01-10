@@ -9,13 +9,11 @@
 
 #include "memory.h"       // enum pg_rep_alg, NUM_OF_PROCESSES
 #include "page_repl.h"    // lru(), working_set()
-#include "queue_types.h"  // queue
+#include "queue.h"  // queue
 
 /* Initializes a memory entry with given values */
 
 static void set_new_entry(struct memory *mem, size_t index, uint32_t page, uint8_t pid, char mode, struct timespec t, uint16_t offset);
-/* ========================================================================== */
-
 
 /* ========================================================================== */
 

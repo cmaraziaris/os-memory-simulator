@@ -9,12 +9,12 @@
 
 #include "memory.h"
 #include "page_repl.h"
-#include "queue_types.h"
+#include "queue.h"
 
-#if 0
+
 /* Remove a page from the IPT, write in HD if necessary.  */
-static void   rm_page(struct memory *mem, struct mem_entry *entry);
-
+static void   rm_page(struct memory *mem, size_t index);
+#if 0
 /* Get the WS index associated with the current PID. */
 static size_t find_wset(struct memory *mem, int8_t pid);
 
@@ -99,12 +99,7 @@ size_t working_set(struct memory *mem, uint8_t pid)
 
     if (queue_search(vm->ws->set, entry) == 0) // if not in the set, remove from the page table
     {
-      if (mm->entries[i].modified == 1) 
-        ++mem->hd_writes;
-
-      vm->ipt[i].set = 0; // removed
-      mm->entries[i].set = 0;
-      --vm->ipt_curr;
+      rm_page(mem, i);
 
       empty = i;
     }
@@ -118,7 +113,8 @@ size_t working_set(struct memory *mem, uint8_t pid)
   
   if (empty == -1) 
   {
-    --vm->ipt_curr;
+    //--vm->ipt_curr;
+    rm_page(mem, last);
     empty = last;
   }
 
@@ -127,19 +123,21 @@ size_t working_set(struct memory *mem, uint8_t pid)
 }
 
 /* ========================================================================= */
-#if 0
+
 /* Remove a page from the IPT, write in HD if necessary */
-static void rm_page(struct memory *mem, struct mem_entry *entry)
+static void rm_page(struct memory *mem, size_t index)
 {
-  if (entry->modified == 1) ++mem->hd_writes;
+  if (mem->mmem->entries[index].modified == 1) 
+    ++mem->hd_writes;
 
-  entry->set = 0;
-
-  --mem->ipt_curr;
+  mem->vmem->ipt[index].set = 0; // removed
+  mem->mmem->entries[index].set = 0;
+    
+  --mem->vmem->ipt_curr;
 }
 
 /* ========================================================================= */
-
+#if 0
 /* Get the WS index associated with the current PID */
 static size_t find_wset(struct memory *mem, int8_t pid)
 {
