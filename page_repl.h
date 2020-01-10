@@ -11,10 +11,8 @@
  * according to the LRU page replacement algorithm.       */
 size_t lru(struct memory *mem);
 
-#if 0
-/* Update the page's PID Working Set based on the last reference. *
- * Required for the  Working Set replacement algorithm.           */
-void working_set(struct memory *mem, struct mem_entry *page_ref);
-#endif
+size_t working_set(struct memory *mem, uint8_t pid);
+
+void ws_update_history_window(struct virtual_memory *vm, uint8_t pid, uint32_t page);
 
 #endif

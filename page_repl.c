@@ -2,11 +2,14 @@
 
 #include <stdbool.h>  // bool
 #include <stddef.h>   // NULL
+#include <stdlib.h>   // exit
 #include <stdint.h>   // size_t, int8_t
+#include <stdio.h>
 #include <time.h>     // struct timespec
 
 #include "memory.h"
 #include "page_repl.h"
+#include "queue_types.h"
 
 #if 0
 /* Remove a page from the IPT, write in HD if necessary.  */
@@ -48,61 +51,83 @@ size_t lru(struct memory *mem)
 
   return pos;
 }
-#if 0
+
 /* ========================================================================= */
 
-/* Update the working set of a specifid PID,    *
- * based on the latest page that was referenced */
-void working_set(struct memory *mem, struct mem_entry *entry)
+void ws_update_history_window(struct virtual_memory *vm, uint8_t pid, uint32_t page)
 {
-  size_t ws_pos = find_wset(mem, entry->pid);    /* Get WS index */
+  struct vmem_entry entry = { 1, pid, page };
+    
+  if (is_queue_full(vm->ws->history[pid], vm->ws->window_s))
+    queue_remove_first(vm->ws->history[pid]);
 
-  /* Check if the page is already in the WS */
-  for (size_t i = 0; i < mem->ws[ws_pos].window_s; ++i)
-  {
-    struct mem_entry *rec = mem->ws[ws_pos].pages[i];
-
-    if (rec != NULL && rec->addr == entry->addr)  /* Found */
-      return;
-  }
-
-  /* The page is not in the WS */
-
-  /* If the WS is not full, place the page in */
-  if (mem->ws[ws_pos].curr != mem->ws[ws_pos].window_s)
-  {
-    for (size_t i = 0; i < mem->ws[ws_pos].window_s; ++i)
-    {
-      if (mem->ws[ws_pos].pages[i] == NULL) /* Found empty slot */
-      {
-        mem->ws[ws_pos].pages[i] = entry;
-        ++mem->ws[ws_pos].curr;
-
-        return;
-      }
-    }
-  }
-
-  /* If the WS is full, remove the oldest entry and place the new one */
-  size_t victim = find_oldest(mem, entry, ws_pos);
-  if (victim != -1)
-  {
-    /* Remove page from main memory */
-    rm_page(mem, mem->ws[ws_pos].pages[victim]);
-
-    struct mem_entry *new_entry = mem->ws[ws_pos].pages[victim];
-
-    /* Place the new page to the IPT + WS, in the old one's position */
-    new_entry->addr = entry->addr;
-    new_entry->pid  = entry->pid;
-    new_entry->latency  = entry->latency;
-    new_entry->modified = entry->modified;
-  }
-
+  queue_insert_last(vm->ws->history[pid], entry);
 }
 
 /* ========================================================================= */
 
+static void ws_make_set(struct queue *set, struct queue **history, uint8_t pid)
+{
+  // TODO: better match pids with history queues
+  struct queue_node *curr = history[pid]->front;
+  while (curr)
+  {
+    if (curr->data.pid == pid) queue_sorted_insert(set, curr->data);
+    curr = curr->next;
+  }
+}
+/* ========================================================================= */
+
+size_t working_set(struct memory *mem, uint8_t pid)
+{
+  struct virtual_memory *vm = mem->vmem;
+  struct main_memory    *mm = mem->mmem;
+
+  vm->ws->set = queue_initialize();
+
+  ws_make_set(vm->ws->set, vm->ws->history, pid);
+
+  size_t empty = -1;
+  size_t last  = -1;
+
+  for (size_t i = 0; i < vm->ipt_size; ++i)
+  {
+    if (vm->ipt[i].pid != pid) continue; // process doesnt own this IPT block, dont touch
+
+    last = i;
+    struct vmem_entry entry = { 1, vm->ipt[i].pid, vm->ipt[i].addr };
+
+    if (queue_search(vm->ws->set, entry) == 0) // if not in the set, remove from the page table
+    {
+      if (mm->entries[i].modified == 1) 
+        ++mem->hd_writes;
+
+      vm->ipt[i].set = 0; // removed
+      mm->entries[i].set = 0;
+      --vm->ipt_curr;
+
+      empty = i;
+    }
+  }
+
+  if (last == -1) 
+  { 
+    printf("Starvation!"); 
+    exit(EXIT_FAILURE); 
+  }
+  
+  if (empty == -1) 
+  {
+    --vm->ipt_curr;
+    empty = last;
+  }
+
+  queue_destroy(vm->ws->set);
+  return empty;
+}
+
+/* ========================================================================= */
+#if 0
 /* Remove a page from the IPT, write in HD if necessary */
 static void rm_page(struct memory *mem, struct mem_entry *entry)
 {

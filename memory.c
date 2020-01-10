@@ -14,6 +14,7 @@
 /* Initializes a memory entry with given values */
 
 static void set_new_entry(struct memory *mem, size_t index, uint32_t page, uint8_t pid, char mode, struct timespec t, uint16_t offset);
+/* ========================================================================== */
 
 
 /* ========================================================================== */
@@ -33,15 +34,9 @@ void mem_retrieve(struct memory *mem, uint32_t addr, char mode, uint8_t pid)
   struct virtual_memory *vm = mem->vmem;
   struct main_memory    *mm = mem->mmem;
 
-  if (vm->pg_repl == WS) //TODO : break it to funcs
-  {
-    struct vmem_entry entry = { 1, pid, page };
-    
-    if (is_queue_full(vm->ws->history[pid], vm->ws->window_s))
-      queue_remove_first(vm->ws->history[pid]);
+  if (vm->pg_repl == WS) 
+    ws_update_history_window(vm, pid, page);
 
-    queue_insert_last(vm->ws->history[pid], entry);
-  }
 
   /* Linear IPT search */
   for (size_t i = 0; i < vm->ipt_size; ++i)
@@ -85,8 +80,6 @@ void mem_retrieve(struct memory *mem, uint32_t addr, char mode, uint8_t pid)
 
        /* Remove the victim */
       if (mm->entries[pos].modified == 1) ++mem->hd_writes;
-
-      vm->ipt[pos].set = 0;
  
       /* Place the new page */
       set_new_entry(mem, pos, page, pid, mode, t, offset);  
@@ -94,64 +87,14 @@ void mem_retrieve(struct memory *mem, uint32_t addr, char mode, uint8_t pid)
 
     else if (vm->pg_repl == WS) /* Working Set algorithm */
     {
-      //for (size_t i = 0; i < NUM_OF_PROCESSES; ++i) /* Init the Sets */
-      vm->ws->set = queue_initialize();
+  
+      size_t empty = working_set(mem, pid);
 
-      //size_t window = vm->ws->history->size;
-
-      
-      //for (size_t i = 0; i < window; ++i)
-      //{
-        //struct vmem_entry item = queue_remove_first(vm->ws->history);
-        
-        //if (item.pid == pid) queue_sorted_insert(vm->ws->set, item);
-
-        //queue_insert_last(vm->ws->history, item); // xd
-
-        // create the set!
-        struct queue_node *curr = vm->ws->history[pid]->front;
-        while (curr)
-        {
-          //if (is_queue_full(vm->ws->set, 1)) break;
-          if (curr->data.pid == pid) queue_sorted_insert(vm->ws->set, curr->data);
-          curr = curr->next;
-        }
-
-      size_t empty = -1;
-      size_t last = -1;
-
-      for (size_t i = 0; i < vm->ipt_size; ++i)
-      {
-        if (vm->ipt[i].set == 0 || vm->ipt[i].pid != pid) continue; // process doesnt own this IPT block, dont touch
-
-        last = i;
-        struct vmem_entry entry = { 1, vm->ipt[i].pid, vm->ipt[i].addr };
-
-        if (queue_search(vm->ws->set, entry) == 0) // if not in the set, remove from the page table
-        {
-          if (mm->entries[i].modified == 1) 
-            ++mem->hd_writes;
-
-          vm->ipt[i].set = 0; // removed
-          mm->entries[i].set = 0;
-          --vm->ipt_curr;
-
-          empty = i;
-        }
-      }
-
-      if (last == -1) { printf("starvation!"); exit(0); }
-      else if (empty == -1) {
-        --vm->ipt_curr;
-        empty = last;
-      } 
         // just insert the new page at an empty spot on the ipt
       set_new_entry(mem, empty, page, pid, mode, t, offset);
       
       ++vm->ipt_curr;
-      
-      /* Update IPT + Working Set */
-      queue_destroy(vm->ws->set);
+
     }
   }
 }
