@@ -1,3 +1,4 @@
+/* queue.c */
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -23,10 +24,6 @@ int is_queue_full(struct queue *q, size_t maxsize){
 
 queue_item_t queue_remove_first(struct queue *q)
 {
-
-// MAKE SURE QUEUE IS NEVER EMPTY
-  if (is_queue_empty(q)) exit(EXIT_FAILURE);
-
   --q->size;
   struct queue_node *temp = q->front;
   queue_item_t item = q->front->data;
@@ -37,14 +34,22 @@ queue_item_t queue_remove_first(struct queue *q)
   return item;
 }
 
-void queue_insert_last(struct queue *q, queue_item_t value)
+static struct queue_node * create_node(queue_item_t value)
 {
   struct queue_node *new_node = malloc(sizeof(struct queue_node));
   assert(new_node);
 
-  ++q->size;
   new_node->data = value;
   new_node->next = NULL;
+
+  return new_node;
+}
+
+void queue_insert_last(struct queue *q, queue_item_t value)
+{
+  struct queue_node *new_node = create_node(value);
+  ++q->size;
+
   if (q->front == NULL){
     q->front = q->tail = new_node;
   }
@@ -55,17 +60,12 @@ void queue_insert_last(struct queue *q, queue_item_t value)
   }
 }
 
-void queue_sorted_insert(struct queue *q, queue_item_t value) // TODO: add compare
+void queue_sorted_insert(struct queue *q, queue_item_t value)
 {
-  struct queue_node *new_node = malloc(sizeof(struct queue_node));
-  assert(new_node);
-
   ++q->size;
-  new_node->data = value;
-  new_node->next = NULL;
 
   if (q->front == NULL){
-    q->front = q->tail = new_node;
+    q->front = q->tail = create_node(value);
   }
   else
   {
@@ -73,10 +73,17 @@ void queue_sorted_insert(struct queue *q, queue_item_t value) // TODO: add compa
 
     while (temp->next)
     {
-      if (temp->next->data.addr == value.addr) { free(new_node); --q->size; return; }// no duplicates
+      if (temp->next->data.addr == value.addr)
+      { 
+        --q->size;     /* If it already exists in the set, do nothing */
+        return; 
+      }
+
       if (temp->next->data.addr > value.addr) break;
       temp = temp->next;
     }
+
+    struct queue_node *new_node = create_node(value);
 
     if (temp->next == NULL)
     {
@@ -110,17 +117,13 @@ int queue_search(struct queue *q, queue_item_t value)
   return 0;
 }
 
-//change according to your data types
-static void gen_free(struct queue_node *node){
-  free(node); // efoson dn exoume array san data type
-}
 
 void queue_destroy(struct queue *q)
 {
   struct queue_node *current = q->front;
   while (current){
     struct queue_node *temp = current->next;
-    gen_free(current);
+    free(current);
     current = temp;
   }
   free(q);

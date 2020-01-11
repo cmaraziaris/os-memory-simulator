@@ -15,4 +15,7 @@ size_t working_set(struct memory *mem, uint8_t pid);
 
 void ws_update_history_window(struct virtual_memory *vm, uint8_t pid, uint32_t page);
 
+
+
+
 #endif
