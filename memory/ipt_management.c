@@ -64,26 +64,17 @@ int ipt_fit(struct memory *mem, uint32_t page, uint8_t pid, char mode, struct ti
 
 void ipt_replace_page(struct memory *mem, uint32_t page, uint8_t pid, char mode, struct timespec t, uint16_t ofs)
 {
-  struct virtual_memory *vm = mem->vmem;
+  size_t empty_pos;     /* An empty IPT / Main Memory index will be stored here */
 
-  if (vm->pg_repl == LRU)
-  {
-    size_t pos = lru(mem);        /* Decide a victim page */
+  if (mem->vmem->pg_repl == LRU)
+    empty_pos = lru(mem);
 
-    if (mem->mmem->entries[pos].modified == 1)    /* Remove the victim */
-      ++mem->hd_writes;            
- 
-    set_new_entry(mem, pos, page, pid, mode, t, ofs);
-  }
-
-  else if (vm->pg_repl == WS)
-  {
-    size_t pos = working_set(mem, pid);    /* Get an empty page */
-
-    set_new_entry(mem, pos, page, pid, mode, t, ofs);  /* Place the new page */
-      
-    ++vm->ipt_curr;
-  }
+  else if (mem->vmem->pg_repl == WS)
+    empty_pos = working_set(mem, pid);    
+    
+  set_new_entry(mem, empty_pos, page, pid, mode, t, ofs);  /* Place the new page */
+    
+  ++mem->vmem->ipt_curr;
 }
 
 /* ========================================================================== */

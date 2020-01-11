@@ -14,11 +14,11 @@ struct queue *queue_initialize(void)
   return q;
 }
 
-int is_queue_empty(struct queue *q){
+int queue_is_empty(struct queue *q){
   return (q->size ? 0 : 1);
 }
 
-int is_queue_full(struct queue *q, size_t maxsize){
+int queue_is_full(struct queue *q, size_t maxsize){
   return (q->size == maxsize ? 1 : 0);
 }
 
@@ -43,6 +43,22 @@ static struct queue_node * create_node(queue_item_t value)
   new_node->next = NULL;
 
   return new_node;
+}
+
+// first node is linked after the last one, change value of first node
+// requires a full queue
+void queue_emplace_last(struct queue *q, queue_item_t value)
+{
+  struct queue_node *curr = q->front;
+
+  q->front = q->front->next;
+
+  q->tail->next = curr;
+
+  curr->next = NULL;
+  curr->data = value;
+
+  q->tail = curr;
 }
 
 void queue_insert_last(struct queue *q, queue_item_t value)

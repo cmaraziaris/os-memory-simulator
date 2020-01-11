@@ -45,6 +45,7 @@ size_t lru(struct memory *mem)
     }
   }
 
+  rm_page(mem, pos);
   return pos;
 }
 
@@ -56,18 +57,17 @@ void ws_update_history_window(struct virtual_memory *vm, uint8_t pid, uint32_t p
 
   size_t index = find_history_window(vm, pid);
     
-  if (is_queue_full(vm->ws->history[index], vm->ws->window_s))
-    queue_remove_first(vm->ws->history[index]);
-
-  queue_insert_last(vm->ws->history[index], entry);
+  if (queue_is_full(vm->ws->history[index], vm->ws->window_s))
+    queue_emplace_last(vm->ws->history[index], entry);
+  else
+    queue_insert_last(vm->ws->history[index], entry);
 }
 
 /* ========================================================================= */
 
 static size_t find_history_window(struct virtual_memory *vm, int8_t pid)
 {
-  for (size_t i = 0; i < NUM_OF_PROCESSES; ++i)
-  {
+  for (size_t i = 0; i < NUM_OF_PROCESSES; ++i) {
     if (vm->ws->history_index[i] == pid)
       return i;
   }
