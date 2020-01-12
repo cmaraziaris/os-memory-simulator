@@ -2,8 +2,8 @@
 PROGRAM = mem_sim
 
 CC = gcc
-# TODO: Na vgalw ta Wall*
-CFLAGS = -Wall -Wextra -I. -I./page_repl_algorithms -I./queue -I./memory
+
+CFLAGS = -I. -I./page_repl_algorithms -I./queue -I./memory
 
 OBJS = ./simulator.o ./memory/memory.o ./memory/ipt_management.o \
 			 ./page_repl_algorithms/page_repl.o ./queue/queue.o
@@ -16,4 +16,4 @@ clean:
 
 # default arguments
 run: $(PROGRAM)
-	./$(PROGRAM) LRU 20 10
+	./$(PROGRAM) LRU 200 10
