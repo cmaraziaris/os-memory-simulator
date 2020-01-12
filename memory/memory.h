@@ -11,7 +11,7 @@
  * Requires: 1) # of frames    2) Page Replacement algrorithm     *
  * 3) Array of associated PIDs 4) Working Set window size         *
  * Note: 4th arg is ignored if not for the Working Set algorithm  */
-struct memory* mem_init(size_t frames, enum pg_rep_alg alg, uint8_t *pids, size_t ws_wnd_s);
+struct memory* mem_init(size_t frames, enum algorithm alg, uint8_t *pids, size_t ws_wnd_s);
 
 
 /* Requests an address from the memory, and applies `mode` operation to it. *

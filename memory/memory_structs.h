@@ -8,7 +8,7 @@
 
 #define NUM_OF_PROCESSES 2
 
-enum pg_rep_alg { LRU, WS };     // Page replacement algorithm
+enum algorithm { LRU, WS };     // Page replacement algorithm
 
 struct memory;
 struct main_memory;
@@ -46,7 +46,7 @@ struct virtual_memory
   size_t ipt_size;               //  # frames
   size_t ipt_curr;               //  # occupied frames
 
-  enum pg_rep_alg pg_repl;       // Page Replacement Algorithm
+  enum algorithm pg_repl;       // Page Replacement Algorithm
 
   struct working_set_comp *ws;   // Working Set tools
 };

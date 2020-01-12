@@ -6,7 +6,7 @@
 #include <stdlib.h>       // malloc, calloc, free, NULL
 #include <time.h>         // timespec, clock_gettime
 
-#include "memory.h"          // enum pg_rep_alg, NUM_OF_PROCESSES
+#include "memory.h"          // enum algorithm, NUM_OF_PROCESSES
 #include "queue.h"
 #include "page_repl.h"       // ws_update_history_window()
 #include "ipt_management.h"  // ipt_*()
@@ -43,7 +43,7 @@ void mem_retrieve(struct memory *mem, uint32_t addr, char mode, uint8_t pid)
 
 /* ========================================================================== */
 
-struct memory *mem_init(size_t frames, enum pg_rep_alg alg, uint8_t *pids, size_t ws_wnd_s)
+struct memory *mem_init(size_t frames, enum algorithm alg, uint8_t *pids, size_t ws_wnd_s)
 {
   struct memory *mem = malloc(sizeof(struct memory));
   assert(mem);

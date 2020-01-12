@@ -6,10 +6,10 @@
 #include <stdlib.h>       // atoi, exit
 #include <string.h>       // strcpy
 
-#include "memory.h"       // enum pg_rep_alg, NUM_OF_PROCESSES
+#include "memory.h"       // enum algorithm, NUM_OF_PROCESSES
 
-#define PATH1 "./traces/bzip.trace"   /* 1st file of memory references */
-#define PATH2 "./traces/gcc.trace"    /* 2nd file of memory references */
+#define PATH1 "./traces/bzip.trace"   /* 1st file of memory traces */
+#define PATH2 "./traces/gcc.trace"    /* 2nd file of memory traces */
 
 enum error_t
 { 
@@ -20,7 +20,8 @@ enum error_t
 
 /* ========================================================================== */
 
-/* Opens a file and performs error handling. */
+/* Opens a file and performs error handling. *
+ * Return a pointer to the file.             */
 static FILE *file_open(char *path);
 
 /* Closes a file and perfrorms error handling. */
@@ -32,7 +33,9 @@ static void  error_handle(enum error_t error);
 /* Print the setup configuration of the simulator. */
 static void  print_setup(char * alg, size_t q, size_t frames, size_t ws_wind, size_t max_refs);
 
-/* Reads a reference and its mode (R/W) from a file. */
+/* Reads a reference and its mode (R/W) from a file. *
+ * Stores the values to the pointers passed as args. *
+ * Returns 0 if we reached the end of file, else 1.  */
 static int   read_ref(FILE *file, uint32_t *paddr, char *pmode);
 
 /* ========================================================================== */
@@ -47,30 +50,32 @@ static int   read_ref(FILE *file, uint32_t *paddr, char *pmode);
 
 int main(int argc, char const *argv[])
 {
-  char repl_alg[4];               /* Replacement algorithm */
+  char repl_alg[4];               // Replacement algorithm
   size_t q;  
   size_t frames;
-  size_t ws_wind  = 0;              /* Working Set History window   */
-  size_t max_refs = 0;              /* Maximum # references         */
+  size_t ws_wind  = 0;           // Working Set History window
+  size_t max_refs = 0;           // Maximum # references
 
-  switch(argc)                /* Decode the command line arguments */
-  {
+  switch(argc)
+  {                          // Decode the command line arguments
     case 6:
-      max_refs = atoi(argv[5]);         /* Optional arg */
+      max_refs = atoi(argv[5]);        // Optional arg
     case 5:
-      ws_wind  = atoi(argv[4]);         /* Optional arg */
+      ws_wind  = atoi(argv[4]);        // Optional arg
     case 4:
       q = atoi(argv[3]);
       frames = atoi(argv[2]);
       strcpy(repl_alg, argv[1]);
       break;
 
-    default: error_handle(INVALID_NUM_ARGS);
+    default: 
+      error_handle(INVALID_NUM_ARGS);
   }
 
-  enum pg_rep_alg page_repl;    /* Set the page replacement algorithm */
+  enum algorithm page_repl;
+
   if (!strcmp(repl_alg, "LRU"))
-    page_repl = LRU;
+    page_repl = LRU;                // Set the page replacement algorithm
   else if (!strcmp(repl_alg, "WS"))
     page_repl = WS;
   else
@@ -83,31 +88,31 @@ int main(int argc, char const *argv[])
 
   printf("\n\033[0;31m> Beginning the simulation!\n>\n");
 
-  uint8_t pids[NUM_OF_PROCESSES] = { 0, 1 };        /* Specify PIDs we're using */
+  uint8_t pids[NUM_OF_PROCESSES] = { 0, 1 };        //* Specify PIDs tracked
 
-  /* Initialize memory segment */
+  // Initialize memory segment
   struct memory *my_mem = mem_init(frames, page_repl, pids, ws_wind);
 
   FILE *tr1 = file_open(PATH1);
   FILE *tr2 = file_open(PATH2);
 
-  size_t refs_rd = 0;         /* References read */
-  bool end = 0;               /* EOF Check */
+  size_t refs_rd = 0;         // References read
+  bool end = 0;               // EOF Check
 
 
   while (refs_rd < max_refs || max_refs == 0)
-  {                             /* Loop while max_refs is not specified or we haven't reached it */
+  {                             // Loop while max_refs is not specified or we haven't reached it
     uint32_t addr;
-    char mode;        /* 'R' or 'W' */
+    char mode;           // 'R' or 'W'
     
-    for (size_t i = 0; i < q; ++i)            /* Read a total of q references */
+    for (size_t i = 0; i < q; ++i)           // Read a total of q references every time
     {
       if (read_ref(tr1, &addr, &mode) == 0 && (end = 1))
         break;
 
       ++refs_rd;
 
-      mem_retrieve(my_mem, addr, mode, pids[0]);    /* Retrieve address from memory */
+      mem_retrieve(my_mem, addr, mode, pids[0]);    // Retrieve address from memory
     }
 
     for (size_t i = 0; i < q; ++i)
@@ -120,14 +125,14 @@ int main(int argc, char const *argv[])
       mem_retrieve(my_mem, addr, mode, pids[1]);
     }
 
-    if (end == 1) break;        /* We reached EOF in at least 1 file  */
+    if (end == 1) break;        // We reached EOF in at least 1 file
   }
 
   printf(">\n> Simulation just ended!\033[0m\n\n");
 
-  mem_stats(my_mem);            /* Print stats */       
+  mem_stats(my_mem);            // Print stats
 
-  mem_clean(my_mem);            /* Cleanup the memory used */
+  mem_clean(my_mem);            // Cleanup the memory used 
 
   file_close(tr1);
   file_close(tr2);
@@ -160,9 +165,6 @@ but no window size specified.\n");
 
 /* ========================================================================== */
 
-/* Reads a reference and its mode (R/W) from a file. *
- * Stores the values to the pointers passed as args. *
- * Returns 0 if we reached the end of file, else 1.  */
 static int read_ref(FILE *file, uint32_t *paddr, char *pmode)
 {
   if (feof(file)) return 0;
@@ -174,8 +176,6 @@ static int read_ref(FILE *file, uint32_t *paddr, char *pmode)
 }
 /* ========================================================================== */
 
-/* Opens a file and performs error handling. *
- * Return a pointer to the file.             */
 static FILE *file_open(char *path)
 {
   FILE *f = fopen(path, "r");
@@ -200,7 +200,7 @@ static void file_close(FILE *f)
 
 static void  print_setup(char * alg, size_t q, size_t frames, size_t ws_wind, size_t max_refs)
 {
-  char yel[] = "\033[0;33m";
+  char yel[] = "\033[0;33m";  // yellow
   char res[] = "\033[0m";
 
   printf("\n> Simulator initialized with these settings:\n");

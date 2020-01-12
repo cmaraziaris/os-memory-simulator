@@ -2,7 +2,7 @@
 PROGRAM = mem_sim
 
 CC = gcc
-
+# TODO: Na vgalw ta Wall*
 CFLAGS = -Wall -Wextra -I. -I./page_repl_algorithms -I./queue -I./memory
 
 OBJS = ./simulator.o ./memory/memory.o ./memory/ipt_management.o \

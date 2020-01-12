@@ -3,7 +3,7 @@
 #include <time.h>            // timespec, clock_gettime
 
 #include "ipt_management.h"
-#include "memory.h"          // enum pg_rep_alg, NUM_OF_PROCESSES
+#include "memory.h"          // enum algorithm, NUM_OF_PROCESSES
 #include "page_repl.h"       // lru(), working_set()
 
 #define FAILED     0
