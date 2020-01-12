@@ -10,29 +10,29 @@
 #include "queue.h"
 
 
-/* Remove a page from the IPT/Main Memory, write it in HD if necessary.  */
-static void   rm_page(struct memory *mem, size_t index);
+// Remove an entry from the IPT/Main Memory, write the page in HD if necessary.
+static void   rm_entry(struct memory *mem, size_t index);
 
-/* Create a set of every distinct page found in the history window. */
+// Create a set of every distinct page found in the history window.
 static void   make_set(struct queue *set, struct queue **history, size_t index);
 
-/* Get the WS History Window index associated with the `pid` given. */
+// Get the WS History Window index associated with the `pid` given.
 static size_t find_history_window(struct virtual_memory *vm, int8_t pid);
 
 /* ========================================================================= */
-/* Return the index of the oldest entry in the main memory */
+
 size_t lru(struct memory *mem)
 {
   struct main_memory *mm = mem->mmem;
 
-  size_t pos = 0;
+  size_t pos = 0;          // Contains the index of the oldest entry
 
   struct timespec min_t;
   min_t.tv_sec  = mm->entries[0].latency.tv_sec;
   min_t.tv_nsec = mm->entries[0].latency.tv_nsec;
 
-  for (size_t i = 1; i < mm->mm_size; ++i)      /* Compare every entry's timestamps */
-  {
+  for (size_t i = 1; i < mm->mm_size; ++i)      // Compare every entry's time
+  {                                             // of last reference
     time_t sec  = mm->entries[i].latency.tv_sec;
     long   nsec = mm->entries[i].latency.tv_nsec;
 
@@ -45,8 +45,8 @@ size_t lru(struct memory *mem)
     }
   }
 
-  rm_page(mem, pos);
-  return pos;
+  rm_entry(mem, pos);     // Remove the oldest page
+  return pos;             // Return the index of an empty IPT slot
 }
 
 /* ========================================================================= */
@@ -58,9 +58,9 @@ void ws_update_history_window(struct virtual_memory *vm, uint8_t pid, uint32_t p
   size_t index = find_history_window(vm, pid);
     
   if (queue_is_full(vm->ws->history[index], vm->ws->window_s))
-    queue_emplace_last(vm->ws->history[index], entry);
+    queue_emplace_last(vm->ws->history[index], entry);        // Removes first ref, adds current ref as last
   else
-    queue_insert_last(vm->ws->history[index], entry);
+    queue_insert_last(vm->ws->history[index], entry);         // Add refs until it's full
 }
 
 /* ========================================================================= */
@@ -78,49 +78,50 @@ size_t working_set(struct memory *mem, uint8_t pid)
 {
   struct virtual_memory *vm = mem->vmem;
 
-  vm->ws->set = queue_initialize();
+  vm->ws->set = queue_initialize();       // Create the set
 
   make_set(vm->ws->set, vm->ws->history, find_history_window(vm, pid));
 
-  size_t empty = (size_t) -1; // 0xFFFFFFFF, max size_t value
-  size_t last  = (size_t) -1;
+  size_t empty = (size_t) -1;         // Index of an empty IPT slot 
+  size_t last  = (size_t) -1;         // Greatest IPT index occupied by proccess `pid`
 
   for (size_t i = 0; i < vm->ipt_size; ++i)
   {
-    if (vm->ipt[i].pid != pid) continue; // process doesnt own this IPT block, dont touch
+    if (vm->ipt[i].pid != pid) continue;    // Process doesn't own this IPT entry
 
     last = i;
     struct vmem_entry entry = { 1, vm->ipt[i].pid, vm->ipt[i].addr };
 
-    if (queue_search(vm->ws->set, entry) == 0) // if not in the set, remove from the page table
+    if (queue_search(vm->ws->set, entry) == 0)       // Ref not in the set
     {
-      rm_page(mem, i);
+      rm_entry(mem, i);         // Remove it from the IPT
       empty = i;
     }
   }
 
-  if (last == (size_t)-1) 
-  { 
+  // Edge cases
+  if (last == (size_t)-1)       // IPT is full with refs from the other process
+  {                             // so the current process has to be suspended/terminated
     printf("Starvation!"); 
-    exit(EXIT_FAILURE); 
+    exit(EXIT_FAILURE);         // Termination (demonstration purposes)
   }
   
-  if (empty == (size_t)-1) 
+  if (empty == (size_t)-1)      // Every distinct ref in the History Window is also in the set 
   {
-    rm_page(mem, last);
+    rm_entry(mem, last);        // So just remove the last IPT entry owned by `pid` found
     empty = last;
   }
 
-  queue_destroy(vm->ws->set);
+  queue_destroy(vm->ws->set);       // Destroy the set
 
-  return empty;
+  return empty;       // Return the index of an empty IPT slot
 }
 
 /* ========================================================================= */
 
 static void make_set(struct queue *set, struct queue **history, size_t index)
 {
-  struct queue_node *curr = history[index]->front;
+  struct queue_node *curr = history[index]->front;   // Get `pid` history window
   while (curr)
   {
     queue_sorted_insert(set, curr->data);     // Insert in the set
@@ -130,7 +131,7 @@ static void make_set(struct queue *set, struct queue **history, size_t index)
 
 /* ========================================================================= */
 
-static void rm_page(struct memory *mem, size_t index)
+static void rm_entry(struct memory *mem, size_t index)
 {
   if (mem->mmem->entries[index].modified == 1)     // Write in the HD
     ++mem->hd_writes;

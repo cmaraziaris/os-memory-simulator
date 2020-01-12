@@ -46,7 +46,7 @@ static struct queue_node * create_node(queue_item_t value)
 }
 
 // first node is linked after the last one, change value of first node
-// requires a full queue
+// requires a full queue => Minimizes allocs/frees done
 void queue_emplace_last(struct queue *q, queue_item_t value)
 {
   struct queue_node *curr = q->front;

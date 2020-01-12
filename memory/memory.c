@@ -21,24 +21,24 @@ void mem_retrieve(struct memory *mem, uint32_t addr, char mode, uint8_t pid)
   ++mem->total_req;
 
   uint16_t offset = (addr << 20) >> 20;
-  uint32_t page = addr >> 12;             /* Remove offset */
+  uint32_t page = addr >> 12;             // Remove offset
 
   struct timespec t;
-  clock_gettime(CLOCK_MONOTONIC, &t);     /* Keep the time of reference */
+  clock_gettime(CLOCK_MONOTONIC, &t);     // Keep the time of reference
 
   if (mem->vmem->pg_repl == WS) 
-    ws_update_history_window(mem->vmem, pid, page);   // History window rolls
+    ws_update_history_window(mem->vmem, pid, page);     // History window rolls
 
-  if (ipt_search(mem, page, pid, mode, t, offset) == SUCCESSFUL)  /* Already in the IPT */
+  if (ipt_search(mem, page, pid, mode, t, offset) == SUCCESSFUL)  // Already in the IPT
     return;
   
   ++mem->hd_reads;          // Page not found in main memory,
   ++mem->page_fs;           // so it will be read from the HD
 
-  if (ipt_fit(mem, page, pid, mode, t, offset) == SUCCESSFUL)     /* Can fit in the IPT */
+  if (ipt_fit(mem, page, pid, mode, t, offset) == SUCCESSFUL)     // Can fit in the IPT
     return;
 
-  ipt_replace_page(mem, page, pid, mode, t, offset);   /* IPT full, perform a page replacement algorithm */
+  ipt_replace_page(mem, page, pid, mode, t, offset);   // IPT full, perform a page replacement algorithm
 }
 
 /* ========================================================================== */
@@ -65,14 +65,14 @@ struct memory *mem_init(size_t frames, enum pg_rep_alg alg, uint8_t *pids, size_
 
   struct virtual_memory *vm = mem->vmem;
 
-  vm->ipt = calloc(frames, sizeof(struct vmem_entry)); /* Create the IPT */
+  vm->ipt = calloc(frames, sizeof(struct vmem_entry));    // Create the IPT
   assert(vm->ipt);
 
   vm->pg_repl  = alg;
   vm->ipt_size = frames;
   vm->ipt_curr = 0;
 
-  if (alg == WS)            /* Create the Working Set components */
+  if (alg == WS)            // Create the Working Set components
   {
     vm->ws = malloc(sizeof(struct working_set_comp));  
     assert(vm->ws);
@@ -97,7 +97,7 @@ void mem_clean(struct memory *mem)
 {
   struct virtual_memory *vm = mem->vmem;
 
-  if (vm->pg_repl == WS)          /* Deallocate Working Set components */
+  if (vm->pg_repl == WS)          // Deallocate Working Set components
   {
     free(vm->ws->history_index);
 
@@ -107,12 +107,12 @@ void mem_clean(struct memory *mem)
     free(vm->ws);
   }
 
-  free(vm->ipt);         /* Deallocate the virtual memory segment */
+  free(vm->ipt);         // Deallocate the virtual memory segment
   free(vm);
 
   struct main_memory *mm = mem->mmem;
 
-  free(mm->entries);     /* Deallocate main memory segment */
+  free(mm->entries);     // Deallocate main memory segment
   free(mm);
 
   free(mem);
