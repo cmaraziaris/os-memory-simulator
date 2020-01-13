@@ -144,23 +144,28 @@ int main(int argc, char const *argv[])
 
 /* Handle logic errors from the user's input */
 static void error_handle(enum error_t error)
-{
+{ 
+  fprintf(stderr,"\n> Couldn't execute the simulation:\n> ");
   switch(error)
   {
     case INVALID_NUM_ARGS:
       fprintf(stderr, "Invalid number of arguments given. Min: 3, Max: 5\n");
-      exit(EXIT_FAILURE);
+      break;
 
     case INVALID_ALG:
       fprintf(stderr, "Invalid page replacement algorithm given. \
-Options are: { LRU, WS }, case sensitive!\n");
-      exit(EXIT_FAILURE);
+\n  Options are: { LRU, WS }, case sensitive!\n");
+      break;
 
     case WS_NO_WINDOW_S:
       fprintf(stderr, "Working Set algorithm was chosen, \
 but no window size specified.\n");
-      exit(EXIT_FAILURE); 
+      break;
   }
+
+  fprintf(stderr, "> Usage:\n$ ./mem_sim\n<page_replacent_algorithm>\n<frames>\n\
+<q>\n<window_size>\n<max_references>\n\n");
+  exit(EXIT_FAILURE);
 }
 
 /* ========================================================================== */
